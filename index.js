@@ -5,6 +5,7 @@ const cors = require('cors');
 const jwt = require('jsonwebtoken');
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 
+
 app.use(cors({
   origin: 'http://localhost:5173',
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
@@ -12,6 +13,13 @@ app.use(cors({
 }));
 app.use(express.json());
 
+
+
+app.use(cors({
+  origin: 'http://localhost:5173',
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
 
 function createToken(user){
 const token = jwt.sign({
@@ -21,6 +29,22 @@ email:user.email
 )
 return token;
 }
+
+// const token = async (req, res, next) => {
+//   const authHeader = req.headers['authorization'];
+//   const token = authHeader && authHeader.split(' ')[1];
+  
+//   if (!token) return res.sendStatus(401);
+
+//   try {
+//     const decodedToken = await admin.auth().verifyIdToken(token);
+//     req.user = decodedToken;
+//     next();
+//   } catch (error) {
+//     console.error('Token verification failed:', error);
+//     res.sendStatus(403);
+//   }
+// };
 
 function verifyToken(req,res,next){
   const authToken = req.headers.authorization.split(' ')[1];
