@@ -6,7 +6,9 @@ const jwt = require('jsonwebtoken');
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 
 app.use(cors({
-  origin: 'http://localhost:5173' 
+  origin: 'http://localhost:5173',
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  allowedHeaders: ['Content-Type', 'Authorization']
 }));
 app.use(express.json());
 
@@ -41,7 +43,7 @@ const client = new MongoClient(uri, {
 
 async function run() {
   try {
-    await client.connect();
+     client.connect();
     console.log("Connected to MongoDB");
 
     const productDB = client.db("productDB");
@@ -51,26 +53,8 @@ async function run() {
     const categoryDB = client.db('categoryDB');
     const category = categoryDB.collection("category");
 
-    
-    app.post('/users', verifyToken, async (req, res) => {
-      const userData = req.body;
-      const token = createToken(userData);
-  
-      try {
-        const isUserExists = await users.findOne({ email: userData.email });
-  
-        if (isUserExists) {
-          return res.status(409).json({ error: "User already exists", token });
-        }
-  
-        const result = await users.insertOne(userData);
-        res.status(201).json({ user: result.ops[0], token });
-      } catch (error) {
-        console.error('Error inserting user data:', error);
-        res.status(500).json({ error: 'Failed to register user' });
-      }
-    });
-  
+
+
     app.get('/users/:email', async (req, res) => {
       const { email } = req.params;
       try {
@@ -86,7 +70,6 @@ async function run() {
         res.status(500).json({ error: 'Failed to fetch user data' });
       }
     });
-    
 
     app.get('/users/get/:id', async (req, res) => {
       const id = req.params.id;  
@@ -115,6 +98,55 @@ async function run() {
       }
     });
 
+
+    app.get('/products', async (req, res) => {
+      try {
+        const productsData = await products.find().toArray();
+        res.send(productsData);
+      } catch (error) {
+        console.error('Error fetching products:', error);
+        res.status(500).json({ error: 'Internal server error' });
+      }
+    });
+
+    app.get('/products/:id', async (req, res) => {
+      try {
+        const id = req.params.id;
+        const product = await products.findOne({ _id: new ObjectId(id) });
+        if (!product) {
+          return res.status(404).json({ error: 'Product not found' });
+        }
+        res.json(product);
+      } catch (error) {
+        console.error('Error fetching product:', error);
+        res.status(500).json({ error: 'Internal server error' });
+      }
+    });
+    
+    
+    app.post('/users', verifyToken, async (req, res) => {
+      const userData = req.body;
+      const token = createToken(userData);
+  
+      try {
+        const isUserExists = await users.findOne({ email: userData.email });
+  
+        if (isUserExists) {
+          return res.status(409).json({ error: "User already exists", token });
+        }
+  
+        const result = await users.insertOne(userData);
+        res.status(201).json({ user: result.ops[0], token });
+      } catch (error) {
+        console.error('Error inserting user data:', error);
+        res.status(500).json({ error: 'Failed to register user' });
+      }
+    });
+  
+    
+    
+
+    
 
     app.patch('/users/:email', verifyToken, async (req, res) => {
       const email = req.params.email;
@@ -145,29 +177,8 @@ async function run() {
       }
     });
 
-    app.get('/products', async (req, res) => {
-      try {
-        const productsData = await products.find().toArray();
-        res.send(productsData);
-      } catch (error) {
-        console.error('Error fetching products:', error);
-        res.status(500).json({ error: 'Internal server error' });
-      }
-    });
+    
 
-    app.get('/products/:id', async (req, res) => {
-      try {
-        const id = req.params.id;
-        const product = await products.findOne({ _id: new ObjectId(id) });
-        if (!product) {
-          return res.status(404).json({ error: 'Product not found' });
-        }
-        res.json(product);
-      } catch (error) {
-        console.error('Error fetching product:', error);
-        res.status(500).json({ error: 'Internal server error' });
-      }
-    });
     
 
     app.delete('/products/:id', async (req, res) => {
